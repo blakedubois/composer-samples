@@ -1,0 +1,53 @@
+jobs:
+
+- hiveJob:
+    queryFileUri: gs://wlt-demo-wf/sql/1_load-data-job.sql
+    scriptVariables:
+      INPUT_PATH: gs://wlt-demo-wf/dataset/records.tsv
+  stepId: 1_load-data-job
+
+- hiveJob:
+    queryFileUri: gs://wlt-demo-wf/sql/2_read-data-job.sql
+    scriptVariables:
+      OUTPUT_PATH: gs://wlt-demo-wf
+  prerequisiteStepIds:
+    - "1_load-data-job"
+  stepId: 2_read-data-job
+
+placement:
+  managedCluster:
+    clusterName: two-node-cluster
+    config:
+      gceClusterConfig:
+        zoneUri: us-central1-f
+      masterConfig:
+        diskConfig:
+          bootDiskSizeGb: 250
+        machineTypeUri: n1-standard-2
+      softwareConfig:
+        imageVersion: 1.3-deb9
+
+      workerConfig:
+        diskConfig:
+          bootDiskSizeGb: 250
+        machineTypeUri: n1-standard-2
+        maxInstances: 4
+
+      secondaryWorkerConfig:
+        maxInstances: 16
+
+      # To enable autoscaling on a cluster:
+      # - Create an autoscaling policy [https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/autoscaling#create_an_autoscaling_policy]
+      #
+      #    gcloud dataproc autoscaling-policies import <policy_id> \
+      #        --source=<policy-config-filename.yaml>
+      #
+      # - refer it as autoscale config as
+      #     projects/[projectId]/locations/[region]/autoscalingPolicies/[policy_id]
+      #
+      #
+      #
+      #
+      autoscalingConfig:
+        # gcloud dataproc autoscaling-policies import wmt-scale-policy_01  --source=autoscale-example-policy-config.yaml
+        policyUri: projects/wmt-data-search/locations/us-central1/autoscalingPolicies/wmt-scale-policy_01
